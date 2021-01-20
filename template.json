@@ -1,0 +1,33 @@
+{
+    "project": "template",
+    "motor_config": [
+        {
+            "motor_id": 0,
+            "motor_name": "pitch_motor",
+            "motor_status": false,
+            "pid_config": [
+                {"pid_name": "a2v", "pid_id": 0},
+                {"pid_name": "v2i", "pid_id": 1}
+            ]
+        },
+        {
+            "motor_id": 1,
+            "motor_name": "yaw_motor",
+            "motor_status": false,
+            "pid_config": [
+                {"pid_name": "a2v", "pid_id": 0},
+                {"pid_name": "v2i", "pid_id": 1}
+            ]
+        }
+    ],
+    "feedback_status": false,
+    "enable_command": "enable {motor_id} {motor_status}",
+    "set_pid_command": "set_pid {motor_id} {pid_id} {kp} {ki} {kd} {i_limit} {out_limit}",
+    "feedback_command": "fb {feedback_status}",
+    "self_defined_command": [
+        "set_angle {motor_id} {target_angle}",
+        "set_velocity {motor_id} {target_velocity}",
+        "set_front",
+        "start_spin {target_velocity} {duration} -> yaw_motor"
+    ]
+}
