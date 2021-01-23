@@ -1,6 +1,6 @@
 import sys
+from typing import List
 
-from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
@@ -13,6 +13,7 @@ class Chart_List(QWidget):
         super(Chart_List, self).__init__(parent=parent)
 
         self.listWidget = QListWidget()
+        self.name2idx = {}
         if motor_config is not None:
             self.setup_list_rows(motor_config)
 
@@ -22,10 +23,18 @@ class Chart_List(QWidget):
 
     def setup_list_rows(self, motor_config:list):
         self.listWidget.clear()
-        for motor_dict in motor_config:
+        self.name2idx = {}
+        for i, motor_dict in enumerate(motor_config):
             chart_row_item = Chart_Row_Item(self.listWidget, title=motor_dict['name'])
             self.listWidget.addItem(chart_row_item)
             self.listWidget.setItemWidget(chart_row_item, chart_row_item.widget)
+            self.name2idx[motor_dict['name']] = i
+
+    def update_chart(self, data_lines:List[str]):
+        print(data_lines)
+        if data_lines[0] in self.name2idx:
+            item = self.listWidget.item(self.name2idx[data_lines[0]])
+            item.update_row(data_lines[1:])
 
 
 class Chart_Row_Item(QListWidgetItem):
@@ -42,8 +51,18 @@ class Chart_Row_Item(QListWidgetItem):
         widget_layout.addWidget(self.velocity_coord)
         widget_layout.addWidget(self.current_coord)
         self.widget = QWidget()
+        self.widget.setObjectName(title)
         self.widget.setLayout(widget_layout)
-        self.setSizeHint(self.widget.sizeHint())
+        self.widget.setFixedHeight(250)
+        self.setSizeHint(self.widget.size())
+
+    def update_row(self, params:list):
+        if len(params) != 6:
+            return
+        param_int = list(map(float, params))
+        self.angle_coord.update_value(param_int[0], param_int[1])
+        self.velocity_coord.update_value(param_int[2], param_int[3])
+        self.current_coord.update_value(param_int[4], param_int[5])
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
