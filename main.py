@@ -280,8 +280,11 @@ class Meta_UI(QtWidgets.QTabWidget):
 
     def process_feedback(self, feedback:bytes):
         self.received_data += feedback.decode(encoding='utf-8')
+        print(self.received_data)
         if '\n' in self.received_data:
+            print(self.received_data)
             fine_data, self.received_data = self.received_data.rsplit('\n', 1)
+            print(fine_data)
             self.update_terminal_display(fine_data + '\n')
             lines = fine_data.split('\n')
             for line in lines:
@@ -297,7 +300,7 @@ class Meta_UI(QtWidgets.QTabWidget):
 
     def send_msg(self, msg):
         try:
-            self.communicate_manager.SendData(bytes(msg + '\n', encoding='utf-8'))
+            self.communicate_manager.SendData(bytes(msg + '\r\n', encoding='utf-8'))
         except Exception as err:
             print(err)
             msg = 'Fail to send message!'
