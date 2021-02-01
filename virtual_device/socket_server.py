@@ -14,7 +14,8 @@ if __name__ == '__main__':
             print(data.decode())
             client.send('hello'.encode('utf-8'))
             sleep(1)
-    except:
+    except Exception as e:
+        print(e)
         print('exception')
     finally:
         soc_server.close()

@@ -8,7 +8,7 @@ from PyQt5.QtCore import *
 
 from pyhocon import ConfigFactory
 
-from device import Manager_Base, Serial_Manager, Bluetooth_Manager
+from device import Manager_Base, Serial_Manager, Socket_Manager, Bluetooth_Manager
 from graph import Coordinatograph
 from chart_widget import Chart_List
 from command_widget import Command_Panel
@@ -38,7 +38,7 @@ class Meta_UI(QtWidgets.QTabWidget):
     def home_tab_setup(self):
         # Elements setup
         connection_port_combo = QComboBox()
-        connection_port_list = ['serial', 'bluetooth 5.0']
+        connection_port_list = ['serial', 'tcp']
         connection_port_combo.addItems(connection_port_list)
 
         port_device_text = QLineEdit()
@@ -101,6 +101,8 @@ class Meta_UI(QtWidgets.QTabWidget):
                 device = port_device_text.text()
                 if method == 'serial':
                     self.communicate_manager = Serial_Manager(device)
+                elif method == 'tcp':
+                    self.communicate_manager = Socket_Manager(device)
                 else:
                     return
                 self.received_data = ''

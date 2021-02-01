@@ -61,7 +61,7 @@ meta_port = 2021
 class Socket_Manager(Manager_Base):
 
     def __init__(self, device_name:str):
-        super(Serial_Manager, self).__init__(device_name=device_name)
+        super(Socket_Manager, self).__init__(device_name=device_name)
         self.__socket = None
         self.alive = False
 
