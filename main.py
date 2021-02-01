@@ -8,7 +8,7 @@ from PyQt5.QtCore import *
 
 from pyhocon import ConfigFactory
 
-from device import Manager_Base, Serial_Manager, Bluetooth_Manager
+from device import Manager_Base, Serial_Manager, Socket_Manager, Bluetooth_Manager
 from graph import Coordinatograph
 from chart_widget import Chart_List
 from command_widget import Command_Panel
@@ -38,7 +38,7 @@ class Meta_UI(QtWidgets.QTabWidget):
     def home_tab_setup(self):
         # Elements setup
         connection_port_combo = QComboBox()
-        connection_port_list = ['serial', 'bluetooth 5.0']
+        connection_port_list = ['serial', 'tcp']
         connection_port_combo.addItems(connection_port_list)
 
         port_device_text = QLineEdit()
@@ -101,6 +101,8 @@ class Meta_UI(QtWidgets.QTabWidget):
                 device = port_device_text.text()
                 if method == 'serial':
                     self.communicate_manager = Serial_Manager(device)
+                elif method == 'tcp':
+                    self.communicate_manager = Socket_Manager(device)
                 else:
                     return
                 self.received_data = ''
@@ -280,8 +282,11 @@ class Meta_UI(QtWidgets.QTabWidget):
 
     def process_feedback(self, feedback:bytes):
         self.received_data += feedback.decode(encoding='utf-8')
+        print(self.received_data)
         if '\n' in self.received_data:
+            print(self.received_data)
             fine_data, self.received_data = self.received_data.rsplit('\n', 1)
+            print(fine_data)
             self.update_terminal_display(fine_data + '\n')
             lines = fine_data.split('\n')
             for line in lines:
@@ -297,7 +302,7 @@ class Meta_UI(QtWidgets.QTabWidget):
 
     def send_msg(self, msg):
         try:
-            self.communicate_manager.SendData(bytes(msg + '\n', encoding='utf-8'))
+            self.communicate_manager.SendData(bytes(msg + '\r\n', encoding='utf-8'))
         except Exception as err:
             print(err)
             msg = 'Fail to send message!'

@@ -1,3 +1,4 @@
+import socket
 from PyQt5.QtCore import QThread, pyqtSignal
 import serial
 from time import sleep
@@ -42,7 +43,7 @@ class Serial_Manager(Manager_Base):
                     n = self.__ser.inWaiting()
                     if n:
                         self.device_signal.emit(self.__ser.read_all())
-                    sleep(0.01)
+                    sleep(0.016)
         except:
             pass
         self.connection_signal.emit(False)
@@ -55,6 +56,38 @@ class Serial_Manager(Manager_Base):
         if self.__ser.isOpen():
             self.__ser.close()
 
+meta_port = 2021
+
+class Socket_Manager(Manager_Base):
+
+    def __init__(self, device_name:str):
+        super(Socket_Manager, self).__init__(device_name=device_name)
+        self.__socket = None
+        self.alive = False
+
+    def run(self):
+        try:
+            self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.__socket.settimeout(30)
+            self.__socket.connect(('localhost', meta_port))
+            self.connection_signal.emit(True)
+            self.alive = True
+            while self.alive:
+                data = self.__socket.recv(100)
+                if len(data) > 0:
+                    self.device_signal.emit(data)
+                sleep(0.016)
+        except:
+            pass
+        finally:
+            self.__socket.close()
+            self.connection_signal.emit(False)
+    
+    def SendData(self, send_msg):
+        return self.__socket.send(send_msg)
+
+    def stop(self):
+        self.alive = False
 
 
 class Bluetooth_Manager(Manager_Base):
