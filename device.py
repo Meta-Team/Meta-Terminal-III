@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 import serial
 from time import sleep
-import bluetooth
+# import bluetooth
 
 class Manager_Base(QThread):
 
@@ -64,7 +64,7 @@ class Bluetooth_Manager(Manager_Base):
         self.alive = False
 
     def run(self):
-        self.__bt = bluetooth.discover_devices()
+        # self.__bt = bluetooth.discover_devices()
         pass
         # while self.alive:
             # n = self.__bt.inWaiting()

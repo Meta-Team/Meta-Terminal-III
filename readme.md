@@ -8,7 +8,14 @@ You can run the tool from the source code by typing
 python3 main.py
 ```
 
-in your computer terminal under the same directory.
+in your computer terminal under the present directory.
+
+## Install Requests
+
+```bash
+pip install -r requests.txt
+```
+
 
 ## Use of configuration file
 
