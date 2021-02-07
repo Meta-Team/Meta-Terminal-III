@@ -31,7 +31,6 @@ class Chart_List(QWidget):
             self.name2idx[motor_dict['name']] = i
 
     def update_chart(self, data_lines:List[str]):
-        print(data_lines)
         if data_lines[0] in self.name2idx:
             item = self.listWidget.item(self.name2idx[data_lines[0]])
             item.update_row(data_lines[1:])
