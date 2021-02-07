@@ -13,7 +13,7 @@ in your computer terminal under the present directory.
 ## Install Requests
 
 ```bash
-pip install -r requests.txt
+pip3 install -r requests.txt
 ```
 
 
