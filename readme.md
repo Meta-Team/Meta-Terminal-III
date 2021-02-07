@@ -29,11 +29,11 @@ The configuration file helps you define your testing interface. There are some p
 + **motor_name**: The name for the motor, marking the motor in the interface.
 + **commands**: Put any other commands that you will need in your testing here.
     + If the command may be used for each motor seperately, set the first parameter **"motor_id"**. 
-        + For example, command *fb_enable motor_id set_enable* will be placed under each motor with only one input parameter *set_enable*.
+        + For example, command "fb_enable motor_id set_enable" will be placed under each motor with only one input parameter *set_enable*.
     + If the command is only for one or more but not all motors, list the motor names in the command and put a **"->"** before the names start.
-        + For example, command *a2v_enable motor_id set_enable -> yaw pitch bullet* will only be placed under *yaw*, *pitch* and *bullet*. 
+        + For example, command "a2v_enable motor_id set_enable -> yaw pitch bullet" will only be placed under *yaw*, *pitch* and *bullet*. 
     + If there is neither **"motor_id"** in the first place nor **"->"**, the command will be considered a global command.
-        + For example, *remote_enable set_enable* will be considered as a global command.
+        + For example, "remote_enable set_enable" will be considered as a global command.
 
 ## Format of feedback
 
