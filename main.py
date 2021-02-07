@@ -2,7 +2,7 @@ import sys
 import os
 
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtGui import QFont, QPalette
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
@@ -121,24 +121,35 @@ class Meta_UI(QWidget):
 
     def param_adjust_tab_setup(self):
         
-        self.title_text = QLabel('Temp')
+        self.project_title = 'Temp'
+        self.title_text = QLabel(self.project_title)
         title_font = QFont('Times New Roman', 30, QFont.Bold)
         self.title_text.setFont(title_font)
 
         # ******************************************* Global Function Section ******************************************* #
         self.global_func_command_board = Command_Panel(parent=self, command_list=['temp_global temp_global_param', 'temp_button'], send_callback=self.send_msg)
+        
+        file_button_layout = QVBoxLayout()
         self.load_config_file_button = QPushButton()
         self.load_config_file_button.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
         self.load_config_file_button.setText('Load config')
         self.load_config_file_button.clicked.connect(self.open_file)
+        self.export_button = QPushButton()
+        self.export_button.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
+        self.export_button.setText('Export')
+        self.export_button.clicked.connect(self.save_file)
+        file_button_layout.addWidget(self.load_config_file_button)
+        file_button_layout.addWidget(self.export_button)
+        file_button_widget = QWidget()
+        file_button_widget.setLayout(file_button_layout)
 
         title_layout = QHBoxLayout()
         title_layout.addWidget(self.title_text)
         title_layout.setAlignment(self.title_text, Qt.AlignTop)
         title_layout.addWidget(self.global_func_command_board)
         title_layout.setAlignment(self.global_func_command_board, Qt.AlignTop)
-        title_layout.addWidget(self.load_config_file_button)
-        title_layout.setAlignment(self.load_config_file_button, Qt.AlignTop)
+        title_layout.addWidget(file_button_widget)
+        title_layout.setAlignment(file_button_widget, Qt.AlignTop)
         title_widget = QWidget()
         title_widget.setLayout(title_layout)
 
@@ -195,7 +206,7 @@ class Meta_UI(QWidget):
         
         # Read the config file
         config_dict = ConfigFactory.parse_file(fileName)
-        project_title = getattr(config_dict, 'project', 'temp')
+        self.project_title = getattr(config_dict, 'project', 'temp')
         motor_config = getattr(config_dict, 'motor_config')
         if motor_config is None:
             return
@@ -228,7 +239,7 @@ class Meta_UI(QWidget):
 
         # Read config done. Build structure
         
-        self.title_text.setText(project_title)
+        self.title_text.setText(self.project_title)
         self.chart_list.setup_list_rows(motors)
         self.setup_motor_panel(motors)
 
@@ -238,19 +249,23 @@ class Meta_UI(QWidget):
         self.motor_combo.clear()
         self.motor_combo.addItems((motor['name'] for motor in motor_config))
         for motor in motor_config:
-            widget = QWidget()
-            widget_layout = QHBoxLayout(widget)
-            param_history = QListWidget(widget)
+            # widget = QWidget()
+            # widget_layout = QHBoxLayout(widget)
+            splitter = QSplitter(Qt.Horizontal)
+            command_panel = Command_Panel(splitter, command_list=motor['commands'], predefined=motor['predefined'], send_callback=self.send_msg)
+            command_panel.setObjectName('command_panel')
+            param_history = QListWidget(splitter)
             param_history.setDragDropMode(QAbstractItemView.DragDrop)
             param_history.setDefaultDropAction(Qt.MoveAction)
             param_history.setSelectionMode(QAbstractItemView.ExtendedSelection)
             # param_history.doubleClicked.connect(print)
             param_history.setObjectName('param_history')
-            command_panel = Command_Panel(widget, command_list=motor['commands'], predefined=motor['predefined'], send_callback=self.send_msg)
-            command_panel.setObjectName('command_panel')
-            widget_layout.addWidget(command_panel)
-            widget_layout.addWidget(param_history)
-            self.motor_stacked_layout.addWidget(widget)
+            # splitter.addWidget(command_panel)
+            # splitter.addWidget(param_history)
+            # widget_layout.addWidget(command_panel)
+            # widget_layout.addWidget(param_history)
+            # self.motor_stacked_layout.addWidget(widget)
+            self.motor_stacked_layout.addWidget(splitter)
         self.motor_combo.currentIndexChanged.connect(self.motor_stacked_layout.setCurrentIndex)
 
     def save_params(self):
@@ -306,6 +321,35 @@ class Meta_UI(QWidget):
             msg = 'Fail to send message!'
         self.update_terminal_display(msg + '\n')
 
+    def save_file(self):
+        fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(None, "choose file", os.path.join(os.getcwd(), self.project_title + '_param.txt'), "All Files(*)")
+        if not fileName:
+            return
+        
+        with open(fileName, 'w', encoding='utf-8') as file_save:
+            content = []
+            content.append(self.project_title)
+            content.append('')
+            
+            content.append('Global Function Parameters')
+            global_func_count = self.global_func_command_board.vlistWidget.count()
+            for i in range(global_func_count):
+                item = self.global_func_command_board.vlistWidget.item(i)
+                content.append('%s %s' % (item.widget.findChild(QLabel).text(), ' '.join(item.get_params())))
+            content.append('')
+
+            motor_count = self.motor_combo.count()
+            for i in range(motor_count):
+                content.append(self.motor_combo.itemText(i) + ' Function Parameters')
+                current_motor = self.motor_stacked_layout.widget(i)
+                command_panel = current_motor.findChild(Command_Panel)
+                motor_func_count = command_panel.vlistWidget.count()
+                for j in range(motor_func_count):
+                    item = command_panel.vlistWidget.item(j)
+                    content.append('%s %s' % (item.widget.findChild(QLabel).text(), ' '.join(item.get_params())))
+                content.append('')
+
+            file_save.write('\n'.join(content))
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     demo = Meta_UI()

@@ -53,6 +53,7 @@ For the convenience of graphic display, the feedback should follow some patterns
     + **Parameter Adjust Interface**: The main interface where you set commands and visualize the motor feedback.
     + **Terminal Interface**: The interface where you setup connection with the device and send command manually.
     + Click the "Load config" button to load the configuration file.
+    + Click "Export" button (Under the "Load config" button, not shown in the image) to export all the data.
 
 ![Terminal Area](./res/terminal_area.png)
 
