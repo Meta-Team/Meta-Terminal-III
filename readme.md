@@ -47,24 +47,24 @@ For the convenience of graphic display, the feedback should follow some patterns
 
 ## Interface Introduction
 
-![Basic Interface](https://github.com/Meta-Team/Meta-Terminal-III/blob/master/res/basic_interface.png)
+![Basic Interface](./res/basic_interface.png)
 
 1. After typing ```python3 main.py``` in the terminal, you can see the above interface. The general interface consists of two parts:
     + **Parameter Adjust Interface**: The main interface where you set commands and visualize the motor feedback.
     + **Terminal Interface**: The interface where you setup connection with the device and send command manually.
     + Click the "Load config" button to load the configuration file.
 
-![Terminal Area](https://github.com/Meta-Team/Meta-Terminal-III/blob/master/res/terminal_area.png)
+![Terminal Area](./res/terminal_area.png)
 
 2. In the **Terminal Interface**, choose a device as you communication tool, fill the port name(for serial) or device ip(for tcp) and click **connect** to setup the connection. The **connect** button will become **disconnect** if connection is completed. The big white block in the middle displays the terminal message. You can type command in the input block at the bottom and send by clicking **send** button.
 
-![Chart Display](https://github.com/Meta-Team/Meta-Terminal-III/blob/master/res/chart_area.png)
+![Chart Display](./res/chart_area.png)
 
 3. The **Chart Display** displays the motor feedback. In the each chart, the red line represent the target value and the blue line represent the actual value.
 
-![Function Area](https://github.com/Meta-Team/Meta-Terminal-III/blob/master/res/function_area.png)
-![param_2](https://github.com/Meta-Team/Meta-Terminal-III/blob/master/res/param_2.png)
-![param_1](https://github.com/Meta-Team/Meta-Terminal-III/blob/master/res/param_1.png)
+![Function Area](./res/function_area.png)
+![param_2](./res/param_2.png)
+![param_1](./res/param_1.png)
 
 4. There are two function blocks: Global Function and Motor Function. Global Function contains commands that are not motor-specific, and Motor Function contains commands that are motor-specific.
     + Commands with no parameter are shown as buttons; commands with parameters are shown as lines of inputs and a send button.
