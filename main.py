@@ -2,7 +2,7 @@ import sys
 import os
 
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPalette
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
@@ -14,20 +14,28 @@ from chart_widget import Chart_List
 from command_widget import Command_Panel
 
 
-class Meta_UI(QtWidgets.QTabWidget):
+class Meta_UI(QWidget):
 
     def __init__(self):
         super(Meta_UI, self).__init__()
         self.received_data = ''
         self.communicate_manager = Manager_Base('')
 
-        self.home_tab = QWidget()
+        self.tab_widget = QTabWidget(self)
+
+        self.terminal_widget = QWidget()
         self.param_adjust_tab = QWidget()
 
-        self.addTab(self.home_tab, 'Home')
-        self.addTab(self.param_adjust_tab, 'Param')
+        self.tab_widget.addTab(self.param_adjust_tab, 'Param')
 
-        self.home_tab_setup()
+        main_splitter = QSplitter(Qt.Vertical)
+        main_splitter.addWidget(self.tab_widget)
+        main_splitter.addWidget(self.terminal_widget)
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(main_splitter)
+        self.setLayout(main_layout)
+
+        self.terminal_widget_setup()
         self.param_adjust_tab_setup()
 
         self.resize(500, 500)
@@ -35,7 +43,7 @@ class Meta_UI(QtWidgets.QTabWidget):
         self.setWindowTitle('Meta Terminal III')
         self.setWindowIcon(QtGui.QIcon('res/meta_logo.jpeg'))
 
-    def home_tab_setup(self):
+    def terminal_widget_setup(self):
         # Elements setup
         connection_port_combo = QComboBox()
         connection_port_list = ['serial', 'tcp']
@@ -58,9 +66,6 @@ class Meta_UI(QtWidgets.QTabWidget):
         send_button = QPushButton()
         send_button.setText('send')
 
-        hello_button = QPushButton()
-        hello_button.setText('hello')
-
         # Layouts setup
         control_button_layout = QHBoxLayout()
         control_button_layout.addWidget(connection_port_combo)
@@ -72,14 +77,10 @@ class Meta_UI(QtWidgets.QTabWidget):
         command_line_layout.addWidget(command_line)
         command_line_layout.addWidget(send_button)
 
-        pre_define_command_layout = QGridLayout()
-        pre_define_command_layout.addWidget(hello_button)
-
         main_layout = QVBoxLayout()
         main_layout.addLayout(control_button_layout)
         main_layout.addWidget(self.terminal_display)
         main_layout.addLayout(command_line_layout)
-        main_layout.addLayout(pre_define_command_layout)
 
         # Event Callback Setup
 
@@ -116,7 +117,7 @@ class Meta_UI(QtWidgets.QTabWidget):
         send_button.clicked.connect(command_line_send_msg)
         connection_button.clicked.connect(connection_button_clicked)
 
-        self.home_tab.setLayout(main_layout)
+        self.terminal_widget.setLayout(main_layout)
 
     def param_adjust_tab_setup(self):
         
