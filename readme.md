@@ -32,17 +32,18 @@ The configuration file helps you define your testing interface. There are some p
         + For example, command "fb_enable motor_id set_enable" will be placed under each motor with only one input parameter *set_enable*.
     + If the command is only for one or more but not all motors, list the motor names in the command and put a **"->"** before the names start.
         + For example, command "a2v_enable motor_id set_enable -> yaw pitch bullet" will only be placed under *yaw*, *pitch* and *bullet*. 
-    + If there is neither **"motor_id"** in the first place nor **"->"**, the command will be considered a global command.
+    + If the command has neither **"motor_id"** in the first place nor a **"->"** in the middle, the command will be considered as a global command.
         + For example, "remote_enable set_enable" will be considered as a global command.
 
 ## Format of feedback
 
-For the convenience of graphic displacement, the feedback should follow some patterns:
+For the convenience of graphic display, the feedback should follow some patterns:
 
-+ For the **graphic displaceable** message, the feedback should follow the pattern of **"fb \[motor_name] \[angle] \[target_angle] \[velocity] \[target_velocity] \[current] \[target_current]"** (replace the value in "[]" with real value). One example could be "fb yaw 356.7 360.0 3.7 4.0 1274.32 1000.00". Make sure each feedback message has **6 numerical parameters**, fill the ones with 0 if you have no value for it. The **\[motor_name]** should be consistant with the **motor_name** in your configuration file.
++ For the **motor feedback** message, the feedback should follow the pattern of **"fb \[motor_name] \[angle] \[target_angle] \[velocity] \[target_velocity] \[current] \[target_current]"** (replace the value in "[]" with real value). Make sure that each feedback message has **6 numerical parameters**, fill up the parameters with 0 if you have no value for it. The **\[motor_name]** should be consistant with the **motor_name** in your configuration file.
+    + For example, the feedback could be "fb yaw 356.7 360.0 3.7 4.5 0 0".
 + For the **pure textual** message, please avoid starting with "fb".
 
-An example of configuration file *template.json* and test file *pa_example.cpp* can be seen in the *example* folder.
+> An example of configuration file *template.json* and test file *pa_example.cpp* can be seen in the *example* folder.
 
 ## Interface Introduction
 
