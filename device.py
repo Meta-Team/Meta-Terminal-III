@@ -69,7 +69,7 @@ class Socket_Manager(Manager_Base):
         try:
             self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.__socket.settimeout(30)
-            self.__socket.connect(('localhost', meta_port))
+            self.__socket.connect((self.device_name, meta_port))
             self.connection_signal.emit(True)
             self.alive = True
             while self.alive:
