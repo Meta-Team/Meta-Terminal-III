@@ -90,6 +90,9 @@ class Meta_UI(QWidget):
             else:
                 connection_button.setText('Connect')
 
+        def clear_data():
+            self.terminal_display.clear()
+
         # Connections setup
         def command_line_send_msg():
             msg = command_line.text()
@@ -116,7 +119,7 @@ class Meta_UI(QWidget):
 
         send_button.clicked.connect(command_line_send_msg)
         connection_button.clicked.connect(connection_button_clicked)
-
+        clear_data_button.clicked.connect(clear_data)
         self.terminal_widget.setLayout(main_layout)
 
     def param_adjust_tab_setup(self):
