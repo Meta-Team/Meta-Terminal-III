@@ -68,7 +68,6 @@ class Socket_Manager(Manager_Base):
     def run(self):
         try:
             self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.__socket.settimeout(30)
             self.__socket.connect((self.device_name, meta_port))
             self.connection_signal.emit(True)
             self.alive = True
@@ -77,8 +76,8 @@ class Socket_Manager(Manager_Base):
                 if len(data) > 0:
                     self.device_signal.emit(data)
                 sleep(0.016)
-        except:
-            pass
+        except Exception as e:
+            print(e)
         finally:
             self.__socket.close()
             self.connection_signal.emit(False)

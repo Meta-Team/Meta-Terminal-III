@@ -307,8 +307,9 @@ class Meta_UI(QWidget):
             lines = fine_data.split('\n')
             for line in lines:
                 tokens = line.split()
-                if tokens[0] == 'fb':
-                    self.chart_list.update_chart(tokens[1:])
+                # print(tokens)
+            #     if tokens[0] == 'fb':
+            #         self.chart_list.update_chart(tokens[1:])
 
     def update_terminal_display(self, input_str:str):
         cursor = self.terminal_display.textCursor()
