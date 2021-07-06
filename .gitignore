@@ -1,3 +1,6 @@
 __pycache__/
 .vscode/
 test/
+.DS_Store
+*.icloud
+.idea/
