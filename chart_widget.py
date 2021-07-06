@@ -61,6 +61,7 @@ class ChartRowItem(QListWidgetItem):
 
     def set_chart_height(self, height: int):
         self.widget.setFixedHeight(height)
+        self.setSizeHint(self.widget.size())
 
     def set_chart_visibilities(self, angle: bool, velocity: bool, current: bool):
         self.angle_coord.setVisible(angle)

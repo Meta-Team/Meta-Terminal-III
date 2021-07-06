@@ -132,9 +132,9 @@ class Meta_UI(QWidget):
             if connection_button.text() == 'Connect':
                 method = connection_port_combo.currentText()
                 device = port_device_text.text()
-                if method == 'serial':
+                if method == 'Serial':
                     self.communicate_manager = Serial_Manager(device)
-                elif method == 'tcp':
+                elif method == 'TCP':
                     self.communicate_manager = Socket_Manager(device)
                 else:
                     return
@@ -353,13 +353,15 @@ class Meta_UI(QWidget):
         self.received_data += feedback.decode(encoding='utf-8')
         if '\n' in self.received_data:
             fine_data, self.received_data = self.received_data.rsplit('\n', 1)
-            self.update_terminal_display(fine_data + '\n')
             lines = fine_data.split('\n')
             for line in lines:
                 tokens = line.split()
-                # print(tokens)
-            #     if tokens[0] == 'fb':
-            #         self.chart_list.update_chart(tokens[1:])
+                if not tokens:
+                    continue
+                elif tokens[0] == 'fb':
+                    self.chart_list.update_chart(tokens[1:])
+                else:
+                    self.update_terminal_display(line + '\n')
 
     def update_terminal_display(self, input_str: str):
         cursor = self.terminal_display.textCursor()
