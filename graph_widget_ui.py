@@ -16,6 +16,7 @@ class Ui_GraphWidget(object):
         GraphWidget.setObjectName("GraphWidget")
         GraphWidget.resize(400, 300)
         self.verticalLayout = QtWidgets.QVBoxLayout(GraphWidget)
+        self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName("verticalLayout")
         self.control_panel = QtWidgets.QWidget(GraphWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)

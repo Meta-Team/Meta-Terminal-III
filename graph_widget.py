@@ -1,6 +1,6 @@
 import pyqtgraph
 from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import QApplication, QWidget, QRadioButton
+from PyQt5.QtWidgets import QApplication, QWidget, QToolButton
 from graph_widget_ui import Ui_GraphWidget
 from data_manager import GroupData, PlotMotorData, PlotGraphData
 from typing import Optional
@@ -17,15 +17,18 @@ class GraphWidget(QWidget, Ui_GraphWidget):
         self.plts: [pyqtgraph.PlotItem] = []
 
         self.pw.addLegend()
-        self.pw.setConfigOptions(leftButtonPan=False)
-        self.pw.setConfigOption('background', 'w')
-        self.pw.setConfigOption('foreground', 'k')
+        # self.pw.setConfigOptions(leftButtonPan=False)
+        # self.pw.setConfigOption('background', 'w')
+        # self.pw.setConfigOption('foreground', 'k')
 
         self.clear_button.clicked.connect(self.clear_graph)
 
         # Add motor switches
         for i, motor in enumerate(group.motors):
-            motor_radio = QRadioButton(text=motor.name, parent=self.motor_container)
+            motor_radio = QToolButton(parent=self.motor_container)
+            motor_radio.setText(motor.name)
+            motor_radio.setCheckable(True)
+            motor_radio.setAutoExclusive(True)
             motor_radio.setProperty("motor_id", i)
             motor_radio.toggled.connect(self.handle_motor_radio_toggled)
             self.motor_container_layout.addWidget(motor_radio)
@@ -47,7 +50,10 @@ class GraphWidget(QWidget, Ui_GraphWidget):
 
             # Add graph switches
             for i, graph in enumerate(self.group.motors[motor_id].graphs):
-                graph_radio = QRadioButton(text=graph.name, parent=self.graph_container)
+                graph_radio = QToolButton(parent=self.graph_container)
+                graph_radio.setText(graph.name)
+                graph_radio.setCheckable(True)
+                graph_radio.setAutoExclusive(True)
                 graph_radio.setProperty("graph_id", i)
                 graph_radio.toggled.connect(self.handle_graph_radio_toggled)
                 self.graph_container_layout.addWidget(graph_radio)
