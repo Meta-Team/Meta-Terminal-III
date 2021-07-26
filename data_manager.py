@@ -23,7 +23,7 @@ class PlotGraphData(QObject):
 
 
 @dataclass
-class PlotMotorData:
+class PlotChannelData:
     name: str
     graphs: [PlotGraphData] = field(default_factory=list)
     total_series_count: int = 0
@@ -44,19 +44,20 @@ class ChannelArgumentType(Enum):
 
 
 class Command(QObject):
-    args_value_updated = pyqtSignal(list)
+    arg_values_updated = pyqtSignal(list)
 
     def __init__(self, name: str, channel: ChannelArgumentType, parent: typing.Optional['QObject'] = ...) -> None:
         super().__init__(parent)
         self.name: str = name
         self.channel: ChannelArgumentType = channel
+        self.has_optional_arg: bool = False
         self.args: [CommandArgument] = []
 
 
 @dataclass
 class GroupData:
     name: str
-    motors: [PlotMotorData] = field(default_factory=list)
+    channels: [PlotChannelData] = field(default_factory=list)
     commands: {str: Command} = field(default_factory=dict)  # name -> Command
 
 
@@ -134,14 +135,14 @@ class DataManager(QObject):
                     self.user_message.emit(f"Unexpected group: {line}")
                     return False
 
-                if line[2] == '/':  # add a new motor
+                if line[2] == '/':  # add a new channel
 
                     p = line[3:].split(":")
                     if len(p) != 2:
-                        self.user_message.emit(f"Invalid motor definition: {line[3:]}")
+                        self.user_message.emit(f"Invalid channel definition: {line[3:]}")
                         return False
 
-                    motor = PlotMotorData(name=p[0])
+                    channel = PlotChannelData(name=p[0])
 
                     # Process graphs
                     for graph_def in p[1].split(' '):
@@ -155,28 +156,28 @@ class DataManager(QObject):
                         # Process series
                         for series_name in graph_def[i + 1:-1].split(','):
                             graph.series.append(PlotSeriesData(name=series_name, data=deque(maxlen=PLOT_DATA_POINTS)))
-                            motor.total_series_count += 1
+                            channel.total_series_count += 1
 
-                        motor.graphs.append(graph)
+                        channel.graphs.append(graph)
 
-                    group.motors.append(motor)
+                    group.channels.append(channel)
 
                 else:  # feedback or set arguments
 
                     p = line.strip(' ')
                     if p[0][2:].isnumeric():  # feedback
-                        motor_id = int(p[0][2:])
-                        if motor_id >= len(group.motors):
+                        channel_id = int(p[0][2:])
+                        if channel_id >= len(group.channels):
                             self.user_message.emit(f"Motor id out of bound: {line}")
                             return False
-                        motor = group.motors[motor_id]
-                        if len(p) - 1 != motor.total_series_count:
-                            self.user_message.emit(f"Expecting {motor.total_series_count} values: {line}")
+                        channel = group.channels[channel_id]
+                        if len(p) - 1 != channel.total_series_count:
+                            self.user_message.emit(f"Expecting {channel.total_series_count} values: {line}")
                             return False
                         try:
                             vals = [float(s) for s in p[1:]]
                             i = 0
-                            for graph in motor.graphs:
+                            for graph in channel.graphs:
                                 for series in graph.series:
                                     series.data.append(vals[i])
                                     i += 1
@@ -193,7 +194,7 @@ class DataManager(QObject):
                         if len(p) - 1 != len(command.args):
                             self.user_message.emit(f"Expecting {len(command.args)} arguments: {line}")
                             return False
-                        command.args_value_updated.emit(p[1:])
+                        command.arg_values_updated.emit(p[1:])
 
         else:  # line not starts with '_'
 
@@ -223,6 +224,7 @@ class DataManager(QObject):
                     if arg_def.startswith('[') and arg_def.endswith(']'):
                         arg_optional = True
                         arg_def = arg_def[1:-1]
+                        command.has_optional_arg = True
                     else:
                         arg_optional = False
                     if (i := arg_def.find('{')) != -1 and arg_def.endswith('}'):

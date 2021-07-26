@@ -1,236 +1,190 @@
 import sys
+import typing
 from typing import List
 
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from time import time
 from math import *
 
+from typing import Optional, Union
+from data_manager import GroupData, Command, CommandArgument, ChannelArgumentType
 
-class CommandPanel(QListWidget):
 
-    def __init__(self, parent: QWidget = None, command_list: list = [], predefined: dict = {}, send_callback=print):
+class OptionGroup(QWidget):
+
+    button_toggled = pyqtSignal(int, bool)
+
+    def __init__(self, options: [str], parent: typing.Optional['QWidget'] = None) -> None:
+        super().__init__(parent=parent)
+        self.hlayout = QHBoxLayout(self)
+        self.hlayout.setContentsMargins(0, 0, 0, 0)
+        self.hlayout.setSpacing(0)
+        self.selected_idx = None
+        for i, option in enumerate(options):
+            button = QToolButton(parent=self)
+            button.setText(option)
+            button.setCheckable(True)
+            button.setAutoExclusive(True)
+            button.setProperty("idx", i)
+            button.toggled.connect(self.handle_button_toggled)
+            self.hlayout.addWidget(button)
+            if i == 0:
+                button.click()
+
+    @pyqtSlot(bool)
+    def handle_button_toggled(self, checked: bool):
+        sender = self.sender()
+        idx = sender.property("idx")
+        if checked:
+            self.selected_idx = idx
+        self.button_toggled.emit(idx, checked)
+
+
+class CommandWidget(QWidget):
+
+    user_message = pyqtSignal(str)
+    send_command = pyqtSignal(str)
+
+    def __init__(self, command: Command, channel: Optional[str], parent: typing.Optional['QWidget'] = None) -> None:
         super().__init__(parent=parent)
 
-        self.hlist_item = None
+        self.command = command
+        self.channel = channel
+        self.command.arg_values_updated.connect(self.update_arg_values)
 
-        self.setDragDropMode(QAbstractItemView.DragDrop)
-        self.setDefaultDropAction(Qt.MoveAction)
-        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.grid_layout = QGridLayout(self)
 
-        if command_list:
-            self.setup_list_rows(command_list, predefined=predefined, send_callback=send_callback)
+        self.label = QLabel(text=command.name, parent=self)
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.grid_layout.addWidget(self.label, 0, 0, 2, 1)
 
-    def setup_list_rows(self, command_list: list, predefined: dict = {}, send_callback=print):
-        self.hlist_item = None
-        self.clear()
+        self.set_button = QPushButton(text="Set", parent=self)
+        self.set_button.clicked.connect(self.send_set_command)
+        if command.has_optional_arg:
+            self.get_button = QPushButton(text="Get", parent=self)
+            self.set_button.clicked.connect(self.send_get_command)
+            self.grid_layout.addWidget(self.set_button, 0, 1, 1, 1)
+            self.grid_layout.addWidget(self.get_button, 1, 1, 1, 1)
+        else:
+            self.get_button = None
+            self.grid_layout.addWidget(self.set_button, 0, 1, 2, 1)
 
-        for command in command_list:
-            tokens = command.split()
-            if len(tokens) == 0:
-                continue
-            if len(tokens) == 1 or all([param in predefined for param in tokens[1:]]):
-                if self.hlist_item is None:
-                    self.hlist_item = QWidget()
-                    self.hlist_item.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
-                    self.hlist_layout = QHBoxLayout()
-
-                command_widget = CommandWidgetButton(self, command=command, predefined=predefined,
-                                                     send_callback=send_callback)
-                self.hlist_layout.addWidget(command_widget)
+        self.arg_labels: [QLabel] = []
+        self.arg_edits: [Union[QLineEdit, QGroupBox]] = []
+        for i, arg in enumerate(command.args):
+            label = QLabel(text=(arg.name + ("*" if not arg.optional else "")), parent=self)
+            label.setAlignment(QtCore.Qt.AlignCenter)
+            if len(arg.options) == 0:
+                edit = QLineEdit(parent=self)
+                edit.setMaximumWidth(100)
             else:
-                command_widget = CommandWidgetLine(self, command=command, predefined=predefined,
-                                                   send_callback=send_callback)
-                self.addItem(command_widget)
-                self.setItemWidget(command_widget, command_widget.widget)
+                edit = OptionGroup(options=arg.options, parent=parent)
 
-        if self.hlist_item is not None:
-            # Add spacer and set layout
-            space_holder = QSpacerItem(10, 10, QSizePolicy.Expanding)
-            self.hlist_layout.addSpacerItem(space_holder)
-            self.hlist_item.setLayout(self.hlist_layout)
+            self.grid_layout.addWidget(label, 0, 2 + i, 1, 1)
+            self.grid_layout.addWidget(edit, 1, 2 + i, 1, 1)
+            self.arg_labels.append(label)
+            self.arg_edits.append(edit)
 
-            # Add to the first of the QListWidgetItem
-            list_item = QListWidgetItem()
-            list_item.setSizeHint(self.hlist_item.sizeHint())
-            self.insertItem(0, list_item)
-            self.setItemWidget(list_item, self.hlist_item)
+        spacer = QSpacerItem(20, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.grid_layout.addItem(spacer, 0, 2 + len(command.args), 2, 1)
 
-    def get_elements(self):
-        current_items = self.selectedItems()
-        ret = []
-        for item in current_items:
-            command_name = item.command_name
-            params = item.get_params()
-            ret.append((command_name, params))
-        return ret
-
-    def set_elements(self, elements: List[str]):
-        elements_dict = {}
-        for element in elements:
-            command_name, params = element.split(' ', 1)
-            elements_dict[command_name] = params
-        for i in range(self.count()):
-            command_name = self.item(i).command_name
-            if command_name in elements_dict:
-                self.item(i).set_params(elements_dict[command_name].split())
-
-    def clear_elements(self):
-        for item in self.selectedItems():
-            item.clear_params()
-
-
-class ParamWidget(QLineEdit):
-    def __init__(self, param_text, maximum_width=80, parent=None):
-        super(QLineEdit, self).__init__(parent=parent)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
-        self.setMaximumSize(maximum_width, 25)
-        self.setPlaceholderText(param_text)
-        self.setToolTip(param_text)
-
-    def get_param(self):
-        return self.text()
-
-    def set_param(self, text: str):
-        self.setText(text)
-
-
-class CommandWidgetLine(QListWidgetItem):
-
-    def __init__(self, parent: QWidget = None, command: str = '', predefined: dict = {}, send_callback=print):
-        super().__init__(parent=parent)
-
-        self.send_callback = send_callback
-
-        items = command.split()
-        if len(items) <= 1:
-            command_name, params = command, []
-        else:
-            command_name, params = items[0], items[1:]
-        self.command_name = command_name
-
-        command_tokens = []
-        param_list = []
-        command_tokens.append(command_name)
-        for param in params:
-            if param in predefined:
-                command_tokens.append(str(predefined[param]))
+    @pyqtSlot()
+    def send_set_command(self):
+        p = [self.command.name]
+        if self.channel is not None:
+            p.append(self.channel)
+        for edit in self.arg_edits:
+            if type(edit) is QLineEdit:
+                p.append(edit.text())
+            elif type(edit) is OptionGroup:
+                p.append(str(edit.selected_idx))
             else:
-                command_tokens.append('%s')
-                param_list.append(param)
+                raise RuntimeError("Invalid edit type")
+        self.send_command.emit(' '.join(p))
 
-        self.command_str_format = ' '.join(command_tokens)
+    @pyqtSlot()
+    def send_get_command(self):
+        p = [self.command.name]
+        if self.channel is not None:
+            p.append(self.channel)
+        for label, edit in zip(self.arg_labels, self.arg_edits):
+            if label.text().endswith('*'):  # required
+                if type(edit) is QLineEdit:
+                    p.append(edit.text())
+                elif type(edit) is OptionGroup:
+                    p.append(str(edit.selected_idx))
+                else:
+                    raise RuntimeError("Invalid edit type")
+        self.send_command.emit(' '.join(p))
 
-        main_layout = QHBoxLayout()
-
-        self.time_param = ParamWidget('t (ms)', maximum_width=50)
-
-        self.process_bar = QProgressBar()
-        self.process_bar.setMaximumSize(80, 25)
-        self.process_bar.setVisible(False)
-
-        self.timer = QTimer()
-        self.start_time = time()
-        self.duration = 0
-        self.timer.timeout.connect(self.__timeout_callback)
-
-        self.send_button = QPushButton(command_name)
-        self.send_button.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
-
-        main_layout.addWidget(self.time_param)
-        main_layout.addWidget(self.send_button)
-
-        self.widget_list = []
-        if param_list:
-            for param_text in param_list:
-                param_block = ParamWidget(param_text=param_text)
-                self.widget_list.append(param_block)
-                main_layout.addWidget(param_block)
-
-        main_layout.addWidget(self.process_bar)
-        main_layout.addStretch()
-
-        self.send_button.clicked.connect(self.__send_button_clicked)
-
-        self.widget = QWidget()
-        self.widget.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
-        self.widget.setLayout(main_layout)
-        self.setSizeHint(self.widget.sizeHint())
-        left_margin, right_margin = main_layout.contentsMargins().left(), main_layout.contentsMargins().right()
-        main_layout.setContentsMargins(left_margin, 0, right_margin, 0)
-
-    def __timeout_callback(self):
-        t = (time() - self.start_time) * 1000
-        step = int(t / self.duration * 100)
-        if step >= 100:
-            self.timer.stop()
-            self.process_bar.setVisible(False)
-            self.send_button.setEnabled(True)
-        else:
-            self.send_callback(self.command_str_format % self.get_params(t))
-            self.process_bar.setValue(step)
-
-    def __send_button_clicked(self):
-        time_str = self.time_param.get_param()
-        if time_str == '':
-            self.send_callback(self.command_str_format % self.get_params())
-        else:
-            self.duration = int(time_str)
-            self.send_button.setEnabled(False)
-            self.process_bar.setValue(0)
-            self.process_bar.setVisible(True)
-            self.start_time = time()
-            self.timer.start(20)
-
-    def get_params(self, t: float = -1):
-        if t < 0:
-            params = (widget.get_param() for widget in self.widget_list)
-        else:
-            params = []
-            for widget in self.widget_list:
-                params.append(str(eval(widget.get_param())))
-        return tuple(params)
-
-    def set_params(self, params: List[str]):
-        if len(params) != len(self.widget_list):
+    @pyqtSlot(list)
+    def update_arg_values(self, vals: list):
+        if len(vals) != len(self.arg_edits):
+            self.user_message.emit(f"Unexpected arg value count for {self.command.name}")
             return
-        for param, widget in zip(params, self.widget_list):
-            widget.set_param(param)
-
-    def clear_params(self):
-        for widget in self.widget_list:
-            widget.set_param('')
+        for edit, val in zip(self.arg_edits, vals):
+            edit.setPlainText(str(val))
 
 
-class CommandWidgetButton(QPushButton):
+class GroupControlPanel(QTabWidget):
 
-    def __init__(self, parent: QWidget = None, command: str = '', predefined: dict = {}, send_callback=print):
-        super(CommandWidgetButton, self).__init__(parent=parent)
+    user_message = pyqtSignal(str)
+    send_command = pyqtSignal(str)
 
-        items = command.split()
-        if len(items) <= 1:
-            command_name, params = command, []
-        else:
-            command_name, params = items[0], items[1:]
+    def add_tab(self, name: str) -> (QScrollArea, QWidget, QVBoxLayout):
+        area = QScrollArea(self)
+        widget = QWidget()
+        area.setWidget(widget)
+        area.setWidgetResizable(True)
+        layout = QVBoxLayout(widget)
+        self.addTab(area, name)
+        return area, widget, layout
 
-        command_tokens = []
-        command_tokens.append(command_name)
-        for param in params:
-            command_tokens.append(str(predefined[param]))
-        command_str = ' '.join(command_tokens)
+    def create_command_widget(self, command: Command, channel: Optional[str], parent: QWidget, layout: QVBoxLayout):
+        w = CommandWidget(command=command, channel=channel, parent=parent)
+        w.user_message.connect(self.user_message)
+        w.send_command.connect(self.send_command)
+        layout.addWidget(w)  # before the spacer
 
-        def call_callback():
-            send_callback(command_str)
+    def __init__(self, group: GroupData, parent: typing.Optional[QWidget] = None) -> None:
+        super().__init__(parent=parent)
+        self.none_area, self.none_widget, self.none_layout = self.add_tab("None")
+        self.all_area, self.all_widget, self.all_layout = self.add_tab("All")
 
-        self.clicked.connect(call_callback)
-        self.setText(command_name)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
+        self.channel_areas: [QScrollArea] = []
+        self.channel_widgets: [QWidget] = []
+        self.channel_layouts: [QVBoxLayout] = []
+        for channel in group.channels:
+            area, widget, layout = self.add_tab(channel.name)
+            self.channel_areas.append(area)
+            self.channel_widgets.append(widget)
+            self.channel_layouts.append(layout)
+
+        for command in group.commands.values():
+            if command.channel == ChannelArgumentType.NONE:
+                self.create_command_widget(command, None, self.none_widget, self.none_layout)
+            if command.channel == ChannelArgumentType.ALL or command.channel == ChannelArgumentType.CHANNEL_ALL:
+                self.create_command_widget(command, 'A', self.all_widget, self.all_layout)
+            if command.channel == ChannelArgumentType.CHANNEL or command.channel == ChannelArgumentType.CHANNEL_ALL:
+                for i, (widget, layout) in enumerate(zip(self.channel_widgets, self.channel_layouts)):
+                    self.create_command_widget(command, str(i), widget, layout)
+
+        self.none_layout.addItem(QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        self.all_layout.addItem(QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        for layout in self.channel_layouts:
+            layout.addItem(QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
 
 if __name__ == '__main__':
+    import sys
+    import data_manager
+
     app = QApplication(sys.argv)
-    demo = CommandPanel(
-        command_list=['test_command motor_id test', 'test_command_2 test_2 input2', 'single_command motor_id',
-                      'single_command_2 motor_id'], predefined={'motor_id': 41})
-    demo.show()
+
+    m, groups = data_manager._test()
+    w = GroupControlPanel(groups[0])
+    w.show()
+
     sys.exit(app.exec_())

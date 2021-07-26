@@ -2,7 +2,7 @@ import pyqtgraph
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QApplication, QWidget, QToolButton
 from graph_widget_ui import Ui_GraphWidget
-from data_manager import GroupData, PlotMotorData, PlotGraphData
+from data_manager import GroupData, PlotChannelData, PlotGraphData
 from typing import Optional
 
 
@@ -12,7 +12,7 @@ class GraphWidget(QWidget, Ui_GraphWidget):
         super(QWidget, self).__init__(parent)
         self.setupUi(self)
         self.group = group
-        self.motor: Optional[PlotMotorData] = None
+        self.motor: Optional[PlotChannelData] = None
         self.graph: Optional[PlotGraphData] = None
         self.plts: [pyqtgraph.PlotItem] = []
 
@@ -24,7 +24,7 @@ class GraphWidget(QWidget, Ui_GraphWidget):
         self.clear_button.clicked.connect(self.clear_graph)
 
         # Add motor switches
-        for i, motor in enumerate(group.motors):
+        for i, motor in enumerate(group.channels):
             motor_radio = QToolButton(parent=self.motor_container)
             motor_radio.setText(motor.name)
             motor_radio.setCheckable(True)
@@ -46,10 +46,10 @@ class GraphWidget(QWidget, Ui_GraphWidget):
             # Update current motor info
             sender = self.sender()
             motor_id = sender.property("motor_id")
-            self.motor = self.group.motors[motor_id]
+            self.motor = self.group.channels[motor_id]
 
             # Add graph switches
-            for i, graph in enumerate(self.group.motors[motor_id].graphs):
+            for i, graph in enumerate(self.group.channels[motor_id].graphs):
                 graph_radio = QToolButton(parent=self.graph_container)
                 graph_radio.setText(graph.name)
                 graph_radio.setCheckable(True)
