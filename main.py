@@ -8,8 +8,8 @@ from PyQt5.QtCore import *
 
 from pyhocon import ConfigFactory
 
-from device import Manager_Base, Serial_Manager, Socket_Manager, Bluetooth_Manager
-from graph import Coordinatograph
+from connection import ConnectionBase, SerialConnection, SocketConnection, BluetoothConnection
+from graph_widget import Coordinatograph
 from chart_widget import ChartList
 from command_widget import CommandPanel
 
@@ -19,7 +19,7 @@ class Meta_UI(QWidget):
     def __init__(self):
         super(Meta_UI, self).__init__()
         self.received_data = ''
-        self.communicate_manager = Manager_Base('')
+        self.communicate_manager = ConnectionBase('')
 
         self.terminal_widget = QWidget(self)
         self.param_adjust_tab = QWidget(self)
@@ -44,7 +44,7 @@ class Meta_UI(QWidget):
 
         # Elements setup
         connection_port_combo = QComboBox()
-        connection_port_list = ['Serial', 'TCP']
+        connection_port_list = ['TCP', 'Serial']
         connection_port_combo.addItems(connection_port_list)
 
         port_device_text = QLineEdit()
@@ -133,14 +133,14 @@ class Meta_UI(QWidget):
                 method = connection_port_combo.currentText()
                 device = port_device_text.text()
                 if method == 'Serial':
-                    self.communicate_manager = Serial_Manager(device)
+                    self.communicate_manager = SerialConnection(device)
                 elif method == 'TCP':
-                    self.communicate_manager = Socket_Manager(device)
+                    self.communicate_manager = SocketConnection(device)
                 else:
                     return
                 self.received_data = ''
-                self.communicate_manager.device_signal.connect(self.process_feedback)
-                self.communicate_manager.connection_signal.connect(update_connect_button)
+                self.communicate_manager.data_received.connect(self.process_feedback)
+                self.communicate_manager.connection_changed.connect(update_connect_button)
                 self.communicate_manager.start()
             else:
                 if self.communicate_manager is not None:
@@ -371,10 +371,10 @@ class Meta_UI(QWidget):
 
     def send_msg(self, msg):
         try:
-            self.communicate_manager.SendData(bytes(msg + '\r\n', encoding='utf-8'))
+            self.communicate_manager.send_data(bytes(msg + '\r\n', encoding='utf-8'))
         except Exception as err:
             print(err)
-            msg = 'Fail to send message!'
+            msg = 'Fail to send user_message!'
         self.update_terminal_display(msg + '\n')
 
     def save_file(self):
