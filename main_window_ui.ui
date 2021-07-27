@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="1">
-     <widget class="QSplitter" name="splitter">
+     <widget class="QSplitter" name="h_splitter">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -35,12 +35,24 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="QSplitter" name="splitter_2">
+         <widget class="QSplitter" name="v_splitter">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
           <widget class="QWidget" name="terminal_container" native="true">
            <layout class="QVBoxLayout" name="verticalLayout_2">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QWidget" name="widget" native="true">
               <property name="sizePolicy">
@@ -63,12 +75,18 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QComboBox" name="comboBox">
+                <widget class="QComboBox" name="connection_type_combo">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>75</width>
+                   <height>0</height>
+                  </size>
                  </property>
                  <property name="currentText">
                   <string>TCP</string>
@@ -86,7 +104,19 @@
                 </widget>
                </item>
                <item>
-                <widget class="QComboBox" name="comboBox_2">
+                <widget class="QComboBox" name="connection_addr_combo">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>250</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="editable">
                   <bool>true</bool>
                  </property>
@@ -95,7 +125,7 @@
                  </property>
                  <item>
                   <property name="text">
-                   <string>meta-jeton-nano-1.local</string>
+                   <string>meta-jetson-nano-1.local</string>
                   </property>
                  </item>
                  <item>
@@ -111,9 +141,28 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButton">
+                <widget class="QPushButton" name="connect_button">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="text">
                   <string>Connect</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="reload_button">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Reload</string>
                  </property>
                 </widget>
                </item>
@@ -121,7 +170,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QTextEdit" name="textEdit"/>
+             <widget class="QTextEdit" name="terminal_edit"/>
             </item>
             <item>
              <widget class="QWidget" name="widget_2" native="true">
@@ -139,41 +188,90 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QLineEdit" name="lineEdit">
+                <widget class="QPushButton" name="clear_terminal_button">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Clear</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="show_raw_check">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Show Raw</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="command_edit">
                  <property name="frame">
                   <bool>false</bool>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButton_2">
+                <widget class="QPushButton" name="send_command_button">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="text">
                   <string>Send</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QPushButton" name="pushButton_3">
-                 <property name="text">
-                  <string>Clear</string>
                  </property>
                 </widget>
                </item>
               </layout>
              </widget>
             </item>
+            <item>
+             <widget class="QGroupBox" name="normal_commands_group">
+              <property name="title">
+               <string>Normal Commands</string>
+              </property>
+              <layout class="QHBoxLayout" name="normal_commands_group_layout"/>
+             </widget>
+            </item>
            </layout>
-           <zorder>widget_2</zorder>
-           <zorder>textEdit</zorder>
-           <zorder>widget</zorder>
           </widget>
-          <widget class="QWidget" name="control_panel_container" native="true"/>
+          <widget class="QWidget" name="control_panel_container" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
          </widget>
         </item>
        </layout>
       </widget>
       <widget class="QWidget" name="right_container" native="true">
        <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
         <item>
          <widget class="QWidget" name="general_control_container" native="true">
           <property name="sizePolicy">
@@ -182,7 +280,7 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout">
+          <layout class="QHBoxLayout" name="general_control_container_layout">
            <property name="leftMargin">
             <number>0</number>
            </property>
@@ -195,19 +293,6 @@
            <property name="bottomMargin">
             <number>0</number>
            </property>
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>347</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
           </layout>
          </widget>
         </item>

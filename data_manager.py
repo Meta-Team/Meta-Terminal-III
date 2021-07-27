@@ -25,6 +25,7 @@ class PlotGraphData(QObject):
 @dataclass
 class PlotChannelData:
     name: str
+    pretty_name: str
     graphs: [PlotGraphData] = field(default_factory=list)
     total_series_count: int = 0
 
@@ -46,9 +47,10 @@ class ChannelArgumentType(Enum):
 class Command(QObject):
     arg_values_updated = pyqtSignal(list)
 
-    def __init__(self, name: str, channel: ChannelArgumentType, parent: typing.Optional['QObject'] = ...) -> None:
+    def __init__(self, name: str, pretty_name: str, channel: ChannelArgumentType, parent=None) -> None:
         super().__init__(parent)
         self.name: str = name
+        self.pretty_name: str = pretty_name
         self.channel: ChannelArgumentType = channel
         self.has_optional_arg: bool = False
         self.args: [CommandArgument] = []
@@ -142,7 +144,7 @@ class DataManager(QObject):
                         self.user_message.emit(f"Invalid channel definition: {line[3:]}")
                         return False
 
-                    channel = PlotChannelData(name=p[0])
+                    channel = PlotChannelData(name=p[0], pretty_name=p[0].replace('_', ' '))
 
                     # Process graphs
                     for graph_def in p[1].split(' '):
@@ -164,7 +166,7 @@ class DataManager(QObject):
 
                 else:  # feedback or set arguments
 
-                    p = line.strip(' ')
+                    p = line.split(' ')
                     if p[0][2:].isnumeric():  # feedback
                         channel_id = int(p[0][2:])
                         if channel_id >= len(group.channels):
@@ -217,7 +219,7 @@ class DataManager(QObject):
                     channel = ChannelArgumentType.ALL
                 elif p[1] == "Channel/All":
                     channel = ChannelArgumentType.CHANNEL_ALL
-                command = Command(name=p[0], channel=channel, parent=self)
+                command = Command(name=p[0], pretty_name=p[0][3:], channel=channel, parent=self)
 
                 # Process arguments
                 for arg_def in p[(1 if channel == ChannelArgumentType.NONE else 2):]:
@@ -240,6 +242,18 @@ class DataManager(QObject):
                 self.pending_usages[group_abbr].remove(p[0])
                 if len(self.pending_usages[group_abbr]) == 0:
                     self.group_added.emit(group)
+                return False
+
+            else:  # not usage
+                return True
+
+    def clear_data(self):
+        for group in self.groups.values():
+            for channel in group.channels:
+                for graph in channel.graphs:
+                    for series in graph.series:
+                        series.data.clear()
+                    graph.data_updated.emit()
 
 
 def _test() -> (DataManager, [GroupData]):

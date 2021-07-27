@@ -10,36 +10,7 @@ from math import *
 
 from typing import Optional, Union
 from data_manager import GroupData, Command, CommandArgument, ChannelArgumentType
-
-
-class OptionGroup(QWidget):
-
-    button_toggled = pyqtSignal(int, bool)
-
-    def __init__(self, options: [str], parent: typing.Optional['QWidget'] = None) -> None:
-        super().__init__(parent=parent)
-        self.hlayout = QHBoxLayout(self)
-        self.hlayout.setContentsMargins(0, 0, 0, 0)
-        self.hlayout.setSpacing(0)
-        self.selected_idx = None
-        for i, option in enumerate(options):
-            button = QToolButton(parent=self)
-            button.setText(option)
-            button.setCheckable(True)
-            button.setAutoExclusive(True)
-            button.setProperty("idx", i)
-            button.toggled.connect(self.handle_button_toggled)
-            self.hlayout.addWidget(button)
-            if i == 0:
-                button.click()
-
-    @pyqtSlot(bool)
-    def handle_button_toggled(self, checked: bool):
-        sender = self.sender()
-        idx = sender.property("idx")
-        if checked:
-            self.selected_idx = idx
-        self.button_toggled.emit(idx, checked)
+from option_group import OptionGroup
 
 
 class CommandWidget(QWidget):
@@ -55,8 +26,9 @@ class CommandWidget(QWidget):
         self.command.arg_values_updated.connect(self.update_arg_values)
 
         self.grid_layout = QGridLayout(self)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.label = QLabel(text=command.name, parent=self)
+        self.label = QLabel(text=command.pretty_name, parent=self)
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.grid_layout.addWidget(self.label, 0, 0, 2, 1)
 
@@ -64,15 +36,28 @@ class CommandWidget(QWidget):
         self.set_button.clicked.connect(self.send_set_command)
         if command.has_optional_arg:
             self.get_button = QPushButton(text="Get", parent=self)
-            self.set_button.clicked.connect(self.send_get_command)
+            self.get_button.clicked.connect(self.send_get_command)
             self.grid_layout.addWidget(self.set_button, 0, 1, 1, 1)
             self.grid_layout.addWidget(self.get_button, 1, 1, 1, 1)
         else:
             self.get_button = None
             self.grid_layout.addWidget(self.set_button, 0, 1, 2, 1)
 
+        col = 2
+
         self.arg_labels: [QLabel] = []
         self.arg_edits: [Union[QLineEdit, QGroupBox]] = []
+        if self.channel is not None:
+            label = QLabel(text="Channel*", parent=self)
+            label.setAlignment(QtCore.Qt.AlignCenter)
+            edit = QLabel(text=self.channel, parent=self)
+            edit.setAlignment(QtCore.Qt.AlignCenter)
+            self.arg_labels.append(label)
+            self.arg_edits.append(edit)
+            self.grid_layout.addWidget(label, 0, col, 1, 1)
+            self.grid_layout.addWidget(edit, 1, col, 1, 1)
+            col += 1
+
         for i, arg in enumerate(command.args):
             label = QLabel(text=(arg.name + ("*" if not arg.optional else "")), parent=self)
             label.setAlignment(QtCore.Qt.AlignCenter)
@@ -82,42 +67,42 @@ class CommandWidget(QWidget):
             else:
                 edit = OptionGroup(options=arg.options, parent=parent)
 
-            self.grid_layout.addWidget(label, 0, 2 + i, 1, 1)
-            self.grid_layout.addWidget(edit, 1, 2 + i, 1, 1)
+            self.grid_layout.addWidget(label, 0, col, 1, 1)
+            self.grid_layout.addWidget(edit, 1, col, 1, 1)
+            col += 1
             self.arg_labels.append(label)
             self.arg_edits.append(edit)
 
-        spacer = QSpacerItem(20, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.grid_layout.addItem(spacer, 0, 2 + len(command.args), 2, 1)
+        spacer = QSpacerItem(5, 5, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.grid_layout.addItem(spacer, 0, col, 2, 1)
 
-    @pyqtSlot()
-    def send_set_command(self):
+    def send_commend_from_input(self, all_required: bool):
         p = [self.command.name]
-        if self.channel is not None:
-            p.append(self.channel)
-        for edit in self.arg_edits:
-            if type(edit) is QLineEdit:
-                p.append(edit.text())
-            elif type(edit) is OptionGroup:
-                p.append(str(edit.selected_idx))
-            else:
-                raise RuntimeError("Invalid edit type")
-        self.send_command.emit(' '.join(p))
-
-    @pyqtSlot()
-    def send_get_command(self):
-        p = [self.command.name]
-        if self.channel is not None:
-            p.append(self.channel)
         for label, edit in zip(self.arg_labels, self.arg_edits):
-            if label.text().endswith('*'):  # required
+            if all_required or label.text().endswith('*'):  # required
                 if type(edit) is QLineEdit:
+                    if edit.text() == "":
+                        self.user_message.emit(f"Argument {label.text()} is missing")
+                        return
                     p.append(edit.text())
                 elif type(edit) is OptionGroup:
+                    if edit.selected_idx is None:
+                        self.user_message.emit(f"Argument {label.text()} is missing")
+                        return
                     p.append(str(edit.selected_idx))
+                elif type(edit) is QLabel:
+                    p.append(edit.text())
                 else:
                     raise RuntimeError("Invalid edit type")
         self.send_command.emit(' '.join(p))
+
+    @pyqtSlot()
+    def send_set_command(self):
+        self.send_commend_from_input(all_required=True)
+
+    @pyqtSlot()
+    def send_get_command(self):
+        self.send_commend_from_input(all_required=False)
 
     @pyqtSlot(list)
     def update_arg_values(self, vals: list):
@@ -128,18 +113,20 @@ class CommandWidget(QWidget):
             edit.setPlainText(str(val))
 
 
-class GroupControlPanel(QTabWidget):
+class GroupControlPanel(QWidget):
 
     user_message = pyqtSignal(str)
     send_command = pyqtSignal(str)
 
     def add_tab(self, name: str) -> (QScrollArea, QWidget, QVBoxLayout):
         area = QScrollArea(self)
+        area.setFrameShape(QFrame.NoFrame)
         widget = QWidget()
         area.setWidget(widget)
         area.setWidgetResizable(True)
         layout = QVBoxLayout(widget)
-        self.addTab(area, name)
+        self.stack_layout.addWidget(area)
+        self.channel_switches.append_option(name)
         return area, widget, layout
 
     def create_command_widget(self, command: Command, channel: Optional[str], parent: QWidget, layout: QVBoxLayout):
@@ -150,6 +137,21 @@ class GroupControlPanel(QTabWidget):
 
     def __init__(self, group: GroupData, parent: typing.Optional[QWidget] = None) -> None:
         super().__init__(parent=parent)
+
+        self.grid_layout = QGridLayout(self)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.channel_switches = OptionGroup(parent=self)
+        self.grid_layout.addWidget(self.channel_switches, 0, 0, 1, 1)
+        self.grid_layout.addItem(QSpacerItem(20, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum),
+                                 0, 1, 1, 1)
+
+        self.container = QWidget()
+        self.grid_layout.addWidget(self.container, 1, 0, 1, 2)
+        self.stack_layout = QStackedLayout(self.container)
+        self.stack_layout.setContentsMargins(0, 0, 0, 0)
+        self.channel_switches.selected_idx_changed.connect(self.stack_layout.setCurrentIndex)
+
         self.none_area, self.none_widget, self.none_layout = self.add_tab("None")
         self.all_area, self.all_widget, self.all_layout = self.add_tab("All")
 
@@ -157,7 +159,7 @@ class GroupControlPanel(QTabWidget):
         self.channel_widgets: [QWidget] = []
         self.channel_layouts: [QVBoxLayout] = []
         for channel in group.channels:
-            area, widget, layout = self.add_tab(channel.name)
+            area, widget, layout = self.add_tab(channel.pretty_name)
             self.channel_areas.append(area)
             self.channel_widgets.append(widget)
             self.channel_layouts.append(layout)
