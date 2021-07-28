@@ -47,7 +47,7 @@ class CommandWidget(QWidget):
 
         self.arg_labels: [QLabel] = []
         self.arg_edits: [Union[QLineEdit, QGroupBox]] = []
-        if self.channel is not None:
+        if self.channel != ChannelArgumentType.NONE:
             label = QLabel(text="Channel*", parent=self)
             label.setAlignment(QtCore.Qt.AlignCenter)
             edit = QLabel(text=self.channel, parent=self)
@@ -115,8 +115,8 @@ class CommandWidget(QWidget):
             elif type(edit) is OptionGroup:
                 edit.set_current_index(int(val))
             elif type(edit) is QLabel:
-                if edit.text() != str(vals):
-                    self.user_message.emit(f"Channel unmatched for {self.command.name}")
+                if edit.text() != str(val):
+                    self.user_message.emit(f"Channel unmatched for {self.command.name}, {edit.text()} != {str(val)}")
                     return
             else:
                 raise RuntimeError("Invalid edit type")

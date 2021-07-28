@@ -169,7 +169,7 @@ class DataManager(QObject):
                         if command is None:
                             self.user_message.emit(f"Unknown command: {line}")
                             return False
-                        if len(p) - 1 != len(command.args):
+                        if len(p) - 1 != len(command.args) + (command.channel != ChannelArgumentType.NONE):
                             self.user_message.emit(f"Expecting {len(command.args)} arguments: {line}")
                             return False
                         command.arg_values_updated.emit(p[1:])
