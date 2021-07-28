@@ -86,10 +86,10 @@ class CommandWidget(QWidget):
                         return
                     p.append(edit.text())
                 elif type(edit) is OptionGroup:
-                    if edit.selected_idx is None:
+                    if edit.get_current_index() is None:
                         self.user_message.emit(f"Argument {label.text()} is missing")
                         return
-                    p.append(str(edit.selected_idx))
+                    p.append(str(edit.get_current_index()))
                 elif type(edit) is QLabel:
                     p.append(edit.text())
                 else:
@@ -110,7 +110,16 @@ class CommandWidget(QWidget):
             self.user_message.emit(f"Unexpected arg value count for {self.command.name}")
             return
         for edit, val in zip(self.arg_edits, vals):
-            edit.setPlainText(str(val))
+            if type(edit) is QLineEdit:
+                edit.setText(str(val))
+            elif type(edit) is OptionGroup:
+                edit.set_current_index(int(val))
+            elif type(edit) is QLabel:
+                if edit.text() != str(vals):
+                    self.user_message.emit(f"Channel unmatched for {self.command.name}")
+                    return
+            else:
+                raise RuntimeError("Invalid edit type")
 
 
 class GroupControlPanel(QWidget):

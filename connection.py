@@ -41,16 +41,19 @@ class SerialConnection(ConnectionBase):
                 _ = self._serial.read_all()  # discard all existing user_message
                 self._alive = True
                 while self._alive and self._serial.isOpen():
-                    n = self._serial.read_all()
+                    n = self._serial.inWaiting()
                     if n:
                         self.data_received.emit(self._serial.read_all())
                     sleep(0.016)
-        except:
-            pass
+        except Exception as e:
+            self.user_message.emit(f"Serial error: {str(e)}")
         self.connection_changed.emit(False)
 
     def send_data(self, msg):
-        return self._serial.write(msg)
+        ret = self._serial.write(msg)
+        self._serial.flush()
+        sleep(0.1)  # dev board cannot handle intense data flow
+        return ret
 
     def stop(self):
         self._alive = False
@@ -85,7 +88,9 @@ class SocketConnection(ConnectionBase):
             self.connection_changed.emit(False)
 
     def send_data(self, send_msg):
-        return self._socket.send(send_msg)
+        ret = self._socket.send(send_msg)
+        sleep(0.5)  # dev board cannot handle intense data flow
+        return ret
 
     def stop(self):
         self._alive = False
@@ -113,14 +118,14 @@ class _TestConnection(ConnectionBase):
         command = send_msg.decode("utf-8").strip()
         print(">", command)
         if command == "help":
-            self.reply_line("hello stats _s _s_enable_fb _s_pid _g _g_enable_fb")
+            self.reply_line("Commands: hello stats _s _s_enable_fb _s_pid _g _g_enable_fb")
         elif command == "_s":
             self.reply_line("_s:Shoot")
             self.reply_line("_s/Bullet:Angle{Target,Actual} Velocity{Target,Actual} Current{Target,Actual}")
             self.reply_line("_s/FW_Left:Velocity{Target,Actual} Current{Target,Actual}")
             self.reply_line("_s/FW_Right:Velocity{Target,Actual} Current{Target,Actual}")
         elif command == "_s_enable_fb ?":
-            self.reply_line("Usage: _s_enable_fb Channel/All Feedback{Disabled,Enabled}")
+            self.reply_line("Usage: _s_enable_fb Channel/All [Feedback{Disabled,Enabled}]")
         elif command == "_s_enable_fb 0 1":
             for _ in range(20):
                 self.reply_line(f"_s0 {' '.join([str(random.randint(0, 100)) for _ in range(6)])}")

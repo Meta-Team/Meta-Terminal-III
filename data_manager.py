@@ -92,34 +92,6 @@ class DataManager(QObject):
         Process a line from connection.
         :return: True if the line should be printed to terminal (not internal data).
         """
-        line = line.strip()
-
-        if self.help_requested:
-            self.help_requested = False
-            normal_commands = []
-            commands_to_send = []  # setup pending_usages completely before sending commands
-            for command in line.split(' '):
-                if not command.startswith('_'):
-                    normal_commands.append(command)
-                else:
-                    if len(command) < 2:
-                        self.user_message.emit(f"Invalid internal command name: {command}")
-                    else:
-                        group_abbr = command[1]
-                        if group_abbr not in self.pending_usages.keys():
-                            self.pending_usages[group_abbr] = []
-                        self.pending_usages[group_abbr].append(command)
-                        if len(command) == 2:  # group info command such as _g
-                            commands_to_send.append(command)
-                        else:  # group command such as _g_pid
-                            commands_to_send.append(command + " ?")
-                        # Add group and command data as these commands returns
-
-            self.normal_commands_added.emit(normal_commands)
-            for c in commands_to_send:
-                self.send_command.emit(c)
-            return False
-
         if len(line) < 3:
             return True
 
@@ -128,6 +100,9 @@ class DataManager(QObject):
 
             if line[2] == ':':  # define new groups
                 self.groups[group_abbr] = GroupData(name=line[3:])
+                if group_abbr not in self.pending_usages.keys():
+                    self.user_message.emit(f"Unexpected group {line}")
+                    return False
                 self.pending_usages[group_abbr].remove("_" + group_abbr)  # clear the group info command
 
             else:
@@ -157,7 +132,8 @@ class DataManager(QObject):
 
                         # Process series
                         for series_name in graph_def[i + 1:-1].split(','):
-                            graph.series.append(PlotSeriesData(name=series_name, data=deque(maxlen=PLOT_DATA_POINTS)))
+                            graph.series.append(PlotSeriesData(name=series_name, data=deque([0] * PLOT_DATA_POINTS,
+                                                                                            maxlen=PLOT_DATA_POINTS)))
                             channel.total_series_count += 1
 
                         channel.graphs.append(graph)
@@ -210,6 +186,9 @@ class DataManager(QObject):
                 if p[0] not in self.pending_usages[group_abbr]:
                     self.user_message.emit(f"Unexpected command usage {line}")
                     return False
+                if len(p) < 2:
+                    self.user_message.emit(f"Invalid usage {line}")
+                    return False
 
                 group: GroupData = self.groups[group_abbr]
                 channel: ChannelArgumentType = ChannelArgumentType.NONE
@@ -243,8 +222,38 @@ class DataManager(QObject):
                 if len(self.pending_usages[group_abbr]) == 0:
                     self.group_added.emit(group)
                 return False
+            elif line.startswith("Commands: "):
 
-            else:  # not usage
+                if not self.help_requested:
+                    return True
+
+                self.help_requested = False
+                line = line[len("Commands: "):]
+                normal_commands = []
+                commands_to_send = []  # setup pending_usages completely before sending commands
+                for command in line.split(' '):
+                    if not command.startswith('_'):
+                        normal_commands.append(command)
+                    else:
+                        if len(command) < 2:
+                            self.user_message.emit(f"Invalid internal command name: {command}")
+                        else:
+                            group_abbr = command[1]
+                            if group_abbr not in self.pending_usages.keys():
+                                self.pending_usages[group_abbr] = []
+                            self.pending_usages[group_abbr].append(command)
+                            if len(command) == 2:  # group info command such as _g
+                                commands_to_send.append(command)
+                            else:  # group command such as _g_pid
+                                commands_to_send.append(command + " ?")
+                            # Add group and command data as these commands returns
+
+                self.normal_commands_added.emit(normal_commands)
+                for c in commands_to_send:
+                    self.send_command.emit(c)
+                return False
+
+            else:  # not usage or help
                 return True
 
     def clear_data(self):
@@ -286,7 +295,7 @@ def _test() -> (DataManager, [GroupData]):
             reply_line("_s/FW_Left:Velocity{Target,Actual} Current{Target,Actual}")
             reply_line("_s/FW_Right:Velocity{Target,Actual} Current{Target,Actual}")
         elif command == "_s_enable_fb ?":
-            reply_line("Usage: _s_enable_fb Channel/All Feedback{Disabled,Enabled}")
+            reply_line("Usage: _s_enable_fb Channel/All [Feedback{Disabled,Enabled}]")
         elif command == "_s_pid ?":
             reply_line("Usage: _s_pid Channel PID{A2V,V2I} [kp] [ki] [kd] [i_limit] [out_limit]")
         elif command == "_g":

@@ -86,7 +86,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.graph_groups.append(graph_group)
         self.graph_group_stack.addWidget(graph_group)
         self.graph_layout_switch.selected_idx_changed.connect(graph_group.update_layout)
-        graph_group.update_layout(self.graph_layout_switch.selected_idx)
+        graph_group.update_layout(self.graph_layout_switch.get_current_index())
 
         self.group_switch.append_option(group.name)  # do it at last since it may emit click signal
 
@@ -115,7 +115,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def handle_send_command(self, command: str):
         try:
             self.terminal_edit.append(f"<b>{command}</b>")
-            self.conn.send_data(bytes(command + '\r\n', encoding='utf-8'))
+            self.conn.send_data(bytes(command + '\r', encoding='utf-8'))
+
         except Exception as err:
             self.handle_user_message(f"Fail to send command: {str(err)}")
 
@@ -135,9 +136,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(bytes)
     def process_data(self, data: bytes):
-        self.received_data += data.decode(encoding='utf-8')
+        self.received_data += data.decode(encoding='ascii', errors='replace')
         while (i := self.received_data.find('\r\n')) != -1:
-            line = self.received_data[:i].strip()
+            line = self.received_data[:i]
 
             if self.show_raw_check.isChecked():
                 # Handle individually before process_line since process_line may emit commands before return
@@ -148,7 +149,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 # If fallback to this case, normal message didn't emit commands, so no need to worry about print order
                 self.terminal_edit.append(line)
 
-            self.received_data = self.received_data[i + 1:]
+            self.received_data = self.received_data[i + 2:]
 
     @pyqtSlot()
     def handle_connect_button_click(self):

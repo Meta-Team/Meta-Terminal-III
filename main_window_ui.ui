@@ -170,7 +170,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QTextEdit" name="terminal_edit"/>
+             <widget class="QTextEdit" name="terminal_edit">
+              <property name="font">
+               <font>
+                <family>Roboto Mono for Powerline</family>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QWidget" name="widget_2" native="true">

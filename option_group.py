@@ -30,6 +30,12 @@ class OptionGroup(QWidget):
         if len(self.buttons) == 1:
             button.click()
 
+    def set_current_index(self, idx: int):
+        self.buttons[idx].click()
+
+    def get_current_index(self) -> int:
+        return self.selected_idx
+
     def clear(self):
         while len(self.buttons) > 0:
             button: QToolButton = self.buttons.pop()
