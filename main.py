@@ -156,12 +156,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.connect_button.text() == "Connect":
             method = self.connection_type_combo.currentText()
             device = self.connection_addr_combo.currentText()
-            from connection import _TestConnection
-            self.conn = _TestConnection("test")
-            # if method == "Serial":
-            #     self.conn = SerialConnection(device)
-            # elif method == "TCP":
-            #     self.conn = SocketConnection(device)
+            # from connection import _TestConnection
+            # self.conn = _TestConnection("test")
+            if method == "Serial":
+                self.conn = SerialConnection(device)
+            elif method == "TCP":
+                self.conn = SocketConnection(device)
             self.received_data = ""
             self.conn.data_received.connect(self.process_data)
             self.conn.connection_changed.connect(self.handle_connection_change)
