@@ -1,6 +1,0 @@
-6020 yaw 7
-6020 pitch 1
-3510 sub_pitch 3
-3508 bullet 4
-3508 fw_left 6
-3508 fw_right 3

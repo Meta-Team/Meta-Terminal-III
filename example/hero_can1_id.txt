@@ -1,0 +1,4 @@
+6020 pitch 1
+3508 sub_pitch 1
+3508 fw_left 4
+3508 fw_right 3

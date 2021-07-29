@@ -1,0 +1,4 @@
+6020 pitch 2
+2006 bullet 7
+3508 fw_left 3
+3508 fw_right 4
