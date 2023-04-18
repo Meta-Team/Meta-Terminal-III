@@ -23,8 +23,8 @@ class Coordinatograph(QWidget):
 
         self.plot_data = self.pw.plot()
         self.plot_target = self.pw.plot()
-        self.data_y = np.zeros(1000, dtype=np.float)
-        self.target_y = np.zeros(1000, dtype=np.float)
+        self.data_y = np.zeros(1000, dtype=np.float32)
+        self.target_y = np.zeros(1000, dtype=np.float32)
         self.x_axis = np.linspace(0, 10, 1000, endpoint=False)
         self.pause = False
  
