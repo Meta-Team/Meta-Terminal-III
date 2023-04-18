@@ -208,7 +208,7 @@ class Meta_UI(QWidget):
         # ***************************************** Motor Function Section ******************************************* #
         self.motor_combo = QComboBox()
         self.clear_param_button = QPushButton()
-        self.clear_param_button.setText('Clear')
+        self.clear_param_button.setText('ClearParams')
         self.clear_param_button.clicked.connect(self.clear_params)
         self.save_button = QPushButton()
         self.save_button.setText('Save')
@@ -281,7 +281,8 @@ class Meta_UI(QWidget):
         fileName, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "choose file", os.getcwd(), "All Files(*)")
         if not fileName:
             return
-
+        self.readConfigFromFileName(fileName)
+    def readConfigFromFileName(self,fileName):
         # Read the config file
         config_dict = ConfigFactory.parse_file(fileName)
         self.project_title = getattr(config_dict, 'project', 'temp')
@@ -355,11 +356,11 @@ class Meta_UI(QWidget):
             fine_data, self.received_data = self.received_data.rsplit('\n', 1)
             lines = fine_data.split('\n')
             for line in lines:
-                tokens = line.split()
+                tokens = line.split(",")
                 if not tokens:
                     continue
-                elif tokens[0] == 'fb':
-                    self.chart_list.update_chart(tokens[1:])
+                elif tokens[0] == '!fb':
+                    self.chart_list.update_chart(tokens[2:])
                 else:
                     self.update_terminal_display(line + '\n')
 

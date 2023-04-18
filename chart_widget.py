@@ -26,8 +26,9 @@ class ChartList(QListWidget):
             self.name2idx[motor_dict['name']] = i
 
     def update_chart(self, data_lines: List[str]):
-        if data_lines[0] in self.name2idx:
-            item = self.item(self.name2idx[data_lines[0]])
+        motor_id = int(data_lines[0])
+        if motor_id in list(self.name2idx.values()):
+            item = self.item(motor_id)
             item.update_row(data_lines[1:])
 
     def set_chart_height(self, height: int):
